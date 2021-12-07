@@ -4,6 +4,7 @@ import lib.io.seeg
 import glob
 import os
 import zipfile
+import torch
 
 
 def bfilt(data, samp_rate, fs, mode, order=3, axis=-1):
@@ -140,13 +141,16 @@ def comp_summ_stats(slp, nbins):
     np.array, summary statistics
     """
     ns, nt = slp.shape
-    slp = slp**2
+    # slp = torch.from_numpy(slp.copy())
+    slp = slp.pow(2)
+    # print(slp.shape)
     pwr = np.zeros((ns, nbins+1))
+    pwr = torch.from_numpy(pwr)
     wndw_len = nt // nbins
     for i in range(nbins):
-        pwr[:, i] = np.mean(slp[:, i*wndw_len:(i+1)*wndw_len], axis=1)
-    pwr[:,0:-1] = pwr[:, 0:-1] / np.max(pwr[:, 0:-1])
-    pwr[:, -1] = np.mean(slp, axis=1)
-    pwr[:, -1] = pwr[:,-1] / np.max(pwr[:, -1])
+        pwr[:, i] = slp[:, i*wndw_len:(i+1)*wndw_len].mean(dim=1)
+    # pwr[:,0:-1] = pwr[:, 0:-1] / np.max(pwr[:, 0:-1])
+    pwr[:, -1] = slp.mean(dim=1)
+    # pwr[:, -1] = pwr[:,-1] / np.max(pwr[:, -1])
     # pwr = pwr / pwr.max(axis=0)
-    return pwr.flatten()
+    return pwr.flatten().numpy()

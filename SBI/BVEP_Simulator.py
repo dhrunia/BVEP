@@ -5,6 +5,7 @@
 """
 import numpy as np
 from numba import jit
+import lib.utils.transform as trnsfrm
 
 
 def func_2DepileptorEqs(y, eta, K, I, SC):
@@ -37,7 +38,7 @@ def epileptor2D_sde_fn(y, eta, tau, K, SC):
     return np.concatenate((dx, dz)).astype(np.float32)
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def Integrator_Euler(y_init, nt, dt, sigma, eta, tau, K, SC):
     nn = SC.shape[0]
     y_out = np.zeros((2*nn, nt), dtype=np.float32)
@@ -51,16 +52,25 @@ def Integrator_Euler(y_init, nt, dt, sigma, eta, tau, K, SC):
     return y_out
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def VEP2Dmodel(params, constants, SC):
 
     nn = SC.shape[0]
 
     # parameters
-    eta = params[0:nn]
-    y_init = params[nn:3*nn]
-    K = params[3*nn]
-    tau = params[3*nn+1]
+    eta_star = params[0:nn]
+    x_init_star = params[nn:2*nn]
+    z_init_star = params[2*nn:3*nn]
+    K_star = params[3*nn]
+    tau_star = params[3*nn+1]
+
+    # transformed parameters
+    eta = trnsfrm.inv_bound_norm(eta_star, lb = -5.0, ub = 0.0)
+    tau = trnsfrm.inv_bound_norm(tau_star, lb = 10.0, ub = 100.0)
+    K = trnsfrm.inv_bound_norm(K_star, lb = 0.0, ub = 10.0)
+    x_init = trnsfrm.inv_bound_norm(x_init_star, lb = -5.0, ub = -1.5)
+    z_init = trnsfrm.inv_bound_norm(z_init_star, lb = 4.0, ub = 6.0)
+    y_init = np.concatenate((x_init, z_init), axis=0)
 
     # fixed parameters
     sigma = np.float32(constants[0])

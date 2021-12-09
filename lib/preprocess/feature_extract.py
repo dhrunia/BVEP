@@ -128,6 +128,33 @@ def find_bst_szr_raw(data_dir):
         print('\t', szr_name, snsr_pwr_var)
     return (szr_max_var, max_snsr_pwr_var)
 
+# def comp_summ_stats_np(slp, nbins):
+#     """Compute summary statistics
+
+#     Parameters
+#     ----------
+#     slp : SEEG log. power with shape #sensors x #timepoints
+#     nbins : Number of bins
+
+#     Returns
+#     -------
+#     np.array, summary statistics
+#     """
+#     ns, nt = slp.shape
+#     # slp = torch.from_numpy(slp.copy())
+#     slp = slp*slp
+#     # print(slp.shape)
+#     pwr = np.zeros((ns, nbins+1))
+#     # pwr = torch.from_numpy(pwr)
+#     wndw_len = nt // nbins
+#     for i in range(nbins):
+#         pwr[:, i] = slp[:, i*wndw_len:(i+1)*wndw_len].mean(axis=1)
+#     pwr[:,0:-1] = pwr[:, 0:-1] / pwr[:, 0:-1].max()
+#     pwr[:, -1] = slp.mean(axis=1)
+#     pwr[:, -1] = pwr[:, -1] / pwr[:, -1].max()
+#     # pwr = pwr / pwr.max()
+#     return pwr.flatten()
+
 def comp_summ_stats(slp, nbins):
     """Compute summary statistics
 
@@ -141,7 +168,7 @@ def comp_summ_stats(slp, nbins):
     np.array, summary statistics
     """
     ns, nt = slp.shape
-    # slp = torch.from_numpy(slp.copy())
+    slp = torch.from_numpy(slp.copy())
     slp = slp.pow(2)
     # print(slp.shape)
     pwr = np.zeros((ns, nbins+1))
@@ -149,8 +176,8 @@ def comp_summ_stats(slp, nbins):
     wndw_len = nt // nbins
     for i in range(nbins):
         pwr[:, i] = slp[:, i*wndw_len:(i+1)*wndw_len].mean(dim=1)
-    # pwr[:,0:-1] = pwr[:, 0:-1] / np.max(pwr[:, 0:-1])
+    pwr[:,0:-1] = pwr[:, 0:-1] / pwr[:, 0:-1].max()
     pwr[:, -1] = slp.mean(dim=1)
-    # pwr[:, -1] = pwr[:,-1] / np.max(pwr[:, -1])
-    # pwr = pwr / pwr.max(axis=0)
+    pwr[:, -1] = pwr[:, -1] / pwr[:, -1].max()
+    # pwr = pwr / pwr.max()
     return pwr.flatten().numpy()

@@ -168,7 +168,7 @@ def comp_summ_stats(slp, nbins):
     np.array, summary statistics
     """
     ns, nt = slp.shape
-    slp = torch.from_numpy(slp.copy())
+    # slp = torch.from_numpy(slp.copy())
     slp = slp.pow(2)
     # print(slp.shape)
     pwr = np.zeros((ns, nbins+1))

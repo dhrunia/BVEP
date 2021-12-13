@@ -53,7 +53,7 @@ def Integrator_Euler(y_init, nt, dt, sigma, eta, tau, K, SC):
 
 
 # @jit(nopython=True)
-def VEP2Dmodel(params, constants, SC):
+def VEP2Dmodel_trans_param(params, constants, SC):
 
     nn = SC.shape[0]
 
@@ -71,6 +71,25 @@ def VEP2Dmodel(params, constants, SC):
     x_init = trnsfrm.inv_bound_norm(x_init_star, lb = -5.0, ub = -1.5)
     z_init = trnsfrm.inv_bound_norm(z_init_star, lb = 4.0, ub = 6.0)
     y_init = np.concatenate((x_init, z_init), axis=0)
+
+    # fixed parameters
+    sigma = np.float32(constants[0])
+    dt = np.float32(constants[1])
+    nt = int(constants[2])
+
+    y_euler = Integrator_Euler(y_init, nt, dt, sigma, eta, tau, K, SC)
+
+    return y_euler[0:nn, :]
+
+def VEP2Dmodel(params, constants, SC):
+
+    nn = SC.shape[0]
+
+    # parameters
+    eta = params[0:nn]
+    y_init = params[nn:3*nn]
+    K = params[3*nn]
+    tau = params[3*nn+1]
 
     # fixed parameters
     sigma = np.float32(constants[0])

@@ -34,26 +34,34 @@ emp_data = fx.prepare_slp_data('../datasets/retro/id004_bj',
                                parcellation='dk', hpf=10, lpf=0.05)
 strct_con = emp_data['SC']
 gain_mat = emp_data['gain']
+slp_emp = emp_data['slp'].T
+obs_summ_stats_emp = fx.comp_summ_stats(
+    slp=torch.from_numpy(slp_emp.copy()), nbins=5)
+ns, nn = gain_mat.shape
 
-
-# fig = plt.figure(figsize=(7, 3), dpi=150, constrained_layout=True)
-# gs = fig.add_gridspec(nrows=1, ncols=2)
-# ax1 = plt.subplot(gs[0])
-# axs_img = ax1.imshow(strct_con)
-# ax1.set_xticks(np.r_[0:strct_con.shape[0]:20])
-# ax1.set_yticks(np.r_[0:strct_con.shape[0]:20])
-# plt.colorbar(axs_img, ax=ax1, use_gridspec=True, fraction=0.05)
-# ax1.set_title('Connectome')
-# ax2 = plt.subplot(gs[1])
-# axs_img = ax2.imshow(gain_mat, aspect='auto')
-# plt.colorbar(axs_img, ax=ax2, use_gridspec=True)
-# ax2.set_title('Gain Matrix')
-# fig = plt.figure(figsize=(6, 5), constrained_layout=True, dpi=150)
-# gs = fig.add_gridspec(nrows=1, ncols=1)
-# ax1 = plt.subplot(gs[0])
-# axs_img = ax1.imshow(slp_emp, aspect='auto')
-# plt.colorbar(axs_img, ax=ax1, use_gridspec=True)
-# ax1.set_title('SEEG log. power')
+fig = plt.figure(figsize=(7, 3), dpi=150, constrained_layout=True)
+gs = fig.add_gridspec(nrows=1, ncols=2)
+ax1 = plt.subplot(gs[0])
+axs_img = ax1.imshow(strct_con)
+ax1.set_xticks(np.r_[0:strct_con.shape[0]:20])
+ax1.set_yticks(np.r_[0:strct_con.shape[0]:20])
+plt.colorbar(axs_img, ax=ax1, use_gridspec=True, fraction=0.05)
+ax1.set_title('Connectome')
+ax2 = plt.subplot(gs[1])
+axs_img = ax2.imshow(gain_mat, aspect='auto')
+plt.colorbar(axs_img, ax=ax2, use_gridspec=True)
+ax2.set_title('Gain Matrix')
+fig = plt.figure(figsize=(6, 5), constrained_layout=True, dpi=150)
+gs = fig.add_gridspec(nrows=1, ncols=1)
+ax1 = plt.subplot(gs[0])
+axs_img = ax1.imshow(slp_emp, aspect='auto')
+plt.colorbar(axs_img, ax=ax1, use_gridspec=True)
+ax1.set_title('SEEG log. power')
+plt.figure(figsize=(3, 6), dpi=150)
+plt.imshow(obs_summ_stats_emp.reshape(
+    ns, 6), aspect='auto', interpolation=None)
+plt.colorbar()
+plt.title('Summary statistics - empirical')
 # %%
 
 
@@ -172,7 +180,7 @@ n_rounds = 1
 start_time = time.time()
 for _ in range(n_rounds):
     theta, x = simulate_for_sbi(simulator, proposal, 
-                                num_simulations=50000, show_progress_bar=True)
+                                num_simulations=1000000, show_progress_bar=True)
     density_estimator = inference.append_simulations(theta, x, proposal=prior).train()
     posterior = inference.build_posterior(density_estimator)
     # posterior = inference.build_posterior(density_estimator, sample_with='mcmc',
@@ -285,23 +293,11 @@ plt.imshow(src_sig_mean, aspect='auto', interpolation=None)
 plt.colorbar()
 plt.title('Predicted Source Signals')
 # %%
-# ds_freq = emp_data['slp'].shape[0]//300
-# slp_emp = emp_data['slp'][::ds_freq, :].T
-obs_summ_stats_emp = fx.comp_summ_stats(
-    slp=torch.from_numpy(emp_data['slp'].copy().T), nbins=5)
-
-plt.figure(figsize=(3, 6), dpi=150)
-plt.imshow(obs_summ_stats_emp.reshape(
-    ns, 6), aspect='auto', interpolation=None)
-plt.colorbar()
-plt.title('Summary statistics - empirical')
-# %%
 num_samples = 1000
 posterior_samples = posterior.sample(
     (num_samples,), obs_summ_stats_emp, 
     sample_with='mcmc', mcmc_method='nuts',
     mcmc_parameters={'warmup_steps':1000, 'thin':1, 'num_chains':1}).numpy()
-# %%
 # %%
 eta_pstr_samples = posterior_samples[:, 0:nn]
 xinit_pstr_samples = posterior_samples[:, nn:2*nn]
